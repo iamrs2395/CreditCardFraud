@@ -1,0 +1,111 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+warnings.filterwarnings('ignore')
+
+#to load the dataset
+df=pd.read_csv("/content/sample_data/creditcard.csv")
+
+df.head()
+
+df.shape
+
+df.isnull().sum()
+
+df.info()
+
+plt.figure(figsize=(10,10))
+sns.heatmap(df.isnull())
+plt.show()
+#null found
+
+is_NaN = df.isnull()
+row_has_NaN = is_NaN.any(axis=1)
+rows_with_NaN = df[row_has_NaN]
+print(rows_with_NaN)
+# checking which row is null
+
+df.drop(3972,axis=0,inplace=True)#dropping the row
+
+df.isnull().sum()
+
+plt.figure(figsize=(10,10))
+sns.heatmap(df.isnull())
+plt.show()
+#no null found
+
+sns.countplot(data=df,x='Class')
+c=df["Class"].value_counts()
+plt.yticks(c)
+plt.show()
+# this shows data is not balanced
+
+X=df.drop("Class",axis=1) #input variable
+Y=df["Class"] #Target variable
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.3,random_state=1)
+
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import GradientBoostingClassifier 
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+def create_model(model):
+    model.fit(X_train,Y_train)#training the model
+    y_pred=model.predict(X_test) #testing it
+    print(classification_report(Y_test,y_pred))
+    print("Confusion Matrix : ")
+    print(confusion_matrix(Y_test,y_pred))
+    return model
+
+from imblearn.over_sampling import RandomOverSampler
+ros = RandomOverSampler()
+pd.Series(Y_train).value_counts()
+
+X_sample_train1,Y_sample_train1 = ros.fit_sample(X_train,Y_train)
+pd.Series(Y_sample_train1).value_counts()
+
+X_sample_test1,Y_sample_test1 = ros.fit_sample(X_test,Y_test)
+pd.Series(Y_sample_test1).value_counts()
+
+lr=LogisticRegression()
+create_model(lr)
+
+# we might have to improve the precision score as well 
+
+dt1=DecisionTreeClassifier()
+dt1=create_model(dt1)
+
+# lets do some pruning
+
+dt2=DecisionTreeClassifier(max_depth=8)
+dt2=create_model(dt2)
+
+#the score improved by a lot 
+
+# lets try boosting 
+
+from sklearn.ensemble import AdaBoostClassifier
+ada=AdaBoostClassifier(n_estimators=100)
+create_model(ada)
+
+gbc=GradientBoostingClassifier(n_estimators=100)
+create_model(gbc)
+
+xgb=XGBClassifier(n_estimators=100,reg_alpha=1)
+create_model(xgb)
+
+# finally lets try random forest
+
+rfc=RandomForestClassifier(n_estimators=10,max_features=10,random_state=1)
+create_model(rfc)
+
+# Finally we can conclude using random forest gave better results than the others with good recall and precision score.
+# WE can conclude to use Random FOrest Algo in this case.
